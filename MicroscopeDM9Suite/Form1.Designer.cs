@@ -215,7 +215,7 @@
             this.Controls.Add(this.btnStart);
             this.Controls.Add(this.videoPictureBox);
             this.Name = "Form1";
-            this.Text = "Sews Kenitra _ Ab";
+            this.Text = "Sews Morocco";
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.videoPictureBox)).EndInit();
