@@ -251,9 +251,9 @@ namespace MicroscopeApp
         {
             if (videoPictureBox.Image == null) return;
 
-            string fileName = txtcodebare.Text.Trim();
+            string codeText = txtcodebare.Text.Trim();
 
-            if (string.IsNullOrEmpty(fileName))
+            if (string.IsNullOrEmpty(codeText))
             {
                 statusLabel.ForeColor = Color.Red;
                 statusLabel.Text = "Scan the Harness";
@@ -265,32 +265,43 @@ namespace MicroscopeApp
                 // Base folder
                 string baseFolder = @"\\mokeaps001\MEDIA\KenitraQuality\";
 
-                // Build subfolders: Year\Month\Day
+                // Build subfolders: Year\Month\Day\CodeText
+                // The textbox value is the folder name; multiple captures
+                // are stored inside it with timestamped filenames.
                 string yearFolder = DateTime.Now.Year.ToString();
-                string monthFolder = DateTime.Now.Month.ToString("D2"); // 01..12
-                string dayFolder = DateTime.Now.Day.ToString("D2");     // 01..31
+                string monthFolder = DateTime.Now.Month.ToString("D2");
+                string dayFolder = DateTime.Now.Day.ToString("D2");
 
-                string fullFolder = Path.Combine(baseFolder, yearFolder, monthFolder, dayFolder);
+                string fullFolder = Path.Combine(baseFolder, yearFolder, monthFolder, dayFolder, codeText);
 
                 // Ensure folder exists
                 Directory.CreateDirectory(fullFolder);
 
-                // Combine folder + filename
-                // Ensure filename has an extension
-                 fileName = txtcodebare.Text.Trim();
-                if (string.IsNullOrEmpty(Path.GetExtension(fileName)))
-                {
-                    // default to .jpg if no extension provided
-                    fileName += ".jpg";
-                }
+                // Timestamped filename so many images can be saved without overwriting
+                string fileName = $"{DateTime.Now:HHmmssfff}.jpg";
 
-                // Combine folder + filename
                 string targetPath = Path.Combine(fullFolder, fileName);
-
 
                 using (Bitmap capturedImage = new Bitmap(videoPictureBox.Image))
                 {
-                    ImageFormat format = GetImageFormat(Path.GetExtension(targetPath));
+                    // Draw the textbox value on the image (traceability watermark)
+                    using (Graphics g = Graphics.FromImage(capturedImage))
+                    {
+                        string overlayText = codeText;
+                        using (Font font = new Font("Arial", 14, FontStyle.Bold))
+                        using (Brush brush = new SolidBrush(Color.Red))
+                        {
+                            // Position bottom-right with padding
+                            SizeF textSize = g.MeasureString(overlayText, font);
+                            PointF position = new PointF(
+                                capturedImage.Width - textSize.Width - 10,
+                                capturedImage.Height - textSize.Height - 10);
+
+                            g.DrawString(overlayText, font, brush, position);
+                        }
+                    }
+
+                    ImageFormat format = GetImageFormat(Path.GetExtension(fileName));
                     capturedImage.Save(targetPath, format);
                 }
 
@@ -298,9 +309,7 @@ namespace MicroscopeApp
                 statusLabel.ForeColor = Color.Green;
                 statusLabel.Text = $"Image saved to: {targetPath}";
 
-                // ✅ Clear the textbox
-                txtcodebare.Clear();
-                txtcodebare.Select();
+                // Keep the barcode so more images can be captured into the same folder
             }
             catch (Exception ex)
             {
