@@ -384,7 +384,8 @@ namespace MicroscopeApp
             try
             {
                 // Base folder
-                string baseFolder = @"\\mokeaps001\MEDIA\KenitraQuality\";
+                //string baseFolder = @"\\mokeaps001\MEDIA\KenitraQuality\";
+                string baseFolder = @"C:\Quality\";
 
                 // Build subfolders: Year\Month\Day\CodeText
                 string yearFolder = DateTime.Now.Year.ToString();
