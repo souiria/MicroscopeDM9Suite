@@ -31,7 +31,6 @@
             this.videoPictureBox = new System.Windows.Forms.PictureBox();
             this.btnStart = new System.Windows.Forms.Button();
             this.BtnStop = new System.Windows.Forms.Button();
-            this.btnCapture = new System.Windows.Forms.Button();
             this.btnSettings = new System.Windows.Forms.Button();
             this.trbBrightness = new System.Windows.Forms.TrackBar();
             this.cboDevices = new System.Windows.Forms.ComboBox();
@@ -41,8 +40,11 @@
             this.button1 = new System.Windows.Forms.Button();
             this.cmbResolution = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
-            this.button2 = new System.Windows.Forms.Button();
             this.button3 = new System.Windows.Forms.Button();
+            this.btnOK = new System.Windows.Forms.Button();
+            this.btnNOK = new System.Windows.Forms.Button();
+            this.btnZoomOut = new System.Windows.Forms.Button();
+            this.btnZoomIn = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.videoPictureBox)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trbBrightness)).BeginInit();
             this.SuspendLayout();
@@ -60,9 +62,9 @@
             // 
             // btnStart
             // 
-            this.btnStart.Location = new System.Drawing.Point(12, 12);
+            this.btnStart.Location = new System.Drawing.Point(2, 12);
             this.btnStart.Name = "btnStart";
-            this.btnStart.Size = new System.Drawing.Size(75, 21);
+            this.btnStart.Size = new System.Drawing.Size(110, 29);
             this.btnStart.TabIndex = 1;
             this.btnStart.Text = "Start";
             this.btnStart.UseVisualStyleBackColor = true;
@@ -70,24 +72,13 @@
             // 
             // BtnStop
             // 
-            this.BtnStop.Location = new System.Drawing.Point(108, 12);
+            this.BtnStop.Location = new System.Drawing.Point(118, 12);
             this.BtnStop.Name = "BtnStop";
-            this.BtnStop.Size = new System.Drawing.Size(75, 21);
+            this.BtnStop.Size = new System.Drawing.Size(105, 29);
             this.BtnStop.TabIndex = 2;
             this.BtnStop.Text = "Stop";
             this.BtnStop.UseVisualStyleBackColor = true;
             this.BtnStop.Click += new System.EventHandler(this.btnStop_Click);
-            // 
-            // btnCapture
-            // 
-            this.btnCapture.Location = new System.Drawing.Point(4, 94);
-            this.btnCapture.Name = "btnCapture";
-            this.btnCapture.Size = new System.Drawing.Size(237, 15);
-            this.btnCapture.TabIndex = 3;
-            this.btnCapture.Text = "Capture";
-            this.btnCapture.UseVisualStyleBackColor = true;
-            this.btnCapture.Visible = false;
-            this.btnCapture.Click += new System.EventHandler(this.btnCapture_Click);
             // 
             // btnSettings
             // 
@@ -130,10 +121,13 @@
             // 
             // txtcodebare
             // 
-            this.txtcodebare.Location = new System.Drawing.Point(4, 55);
+            this.txtcodebare.Location = new System.Drawing.Point(7, 57);
+            this.txtcodebare.Multiline = true;
             this.txtcodebare.Name = "txtcodebare";
-            this.txtcodebare.Size = new System.Drawing.Size(229, 20);
+            this.txtcodebare.Size = new System.Drawing.Size(229, 65);
             this.txtcodebare.TabIndex = 9;
+            this.txtcodebare.TextChanged += new System.EventHandler(this.txtcodebare_TextChanged);
+            this.txtcodebare.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtcodebare_KeyDown);
             // 
             // statusLabel
             // 
@@ -171,27 +165,56 @@
             this.label1.TabIndex = 13;
             this.label1.Text = "Resolution List";
             // 
-            // button2
-            // 
-            this.button2.BackColor = System.Drawing.Color.LimeGreen;
-            this.button2.Location = new System.Drawing.Point(4, 115);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(237, 53);
-            this.button2.TabIndex = 14;
-            this.button2.Text = "Save";
-            this.button2.UseVisualStyleBackColor = false;
-            this.button2.Click += new System.EventHandler(this.button2_Click);
-            // 
             // button3
             // 
             this.button3.BackColor = System.Drawing.Color.DarkOrange;
-            this.button3.Location = new System.Drawing.Point(5, 174);
+            this.button3.Location = new System.Drawing.Point(7, 212);
             this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(237, 53);
+            this.button3.Size = new System.Drawing.Size(237, 79);
             this.button3.TabIndex = 15;
             this.button3.Text = "New";
             this.button3.UseVisualStyleBackColor = false;
             this.button3.Click += new System.EventHandler(this.button3_Click);
+            // 
+            // btnOK
+            // 
+            this.btnOK.BackColor = System.Drawing.Color.LightGreen;
+            this.btnOK.Location = new System.Drawing.Point(12, 128);
+            this.btnOK.Name = "btnOK";
+            this.btnOK.Size = new System.Drawing.Size(105, 64);
+            this.btnOK.TabIndex = 16;
+            this.btnOK.Text = "OK";
+            this.btnOK.UseVisualStyleBackColor = false;
+            this.btnOK.Click += new System.EventHandler(this.btnOK_Click);
+            // 
+            // btnNOK
+            // 
+            this.btnNOK.BackColor = System.Drawing.Color.Tomato;
+            this.btnNOK.Location = new System.Drawing.Point(126, 128);
+            this.btnNOK.Name = "btnNOK";
+            this.btnNOK.Size = new System.Drawing.Size(105, 64);
+            this.btnNOK.TabIndex = 17;
+            this.btnNOK.Text = "NOK";
+            this.btnNOK.UseVisualStyleBackColor = false;
+            this.btnNOK.Click += new System.EventHandler(this.btnNOK_Click);
+            // 
+            // btnZoomOut
+            // 
+            this.btnZoomOut.Location = new System.Drawing.Point(159, 313);
+            this.btnZoomOut.Name = "btnZoomOut";
+            this.btnZoomOut.Size = new System.Drawing.Size(75, 23);
+            this.btnZoomOut.TabIndex = 18;
+            this.btnZoomOut.Text = "ZoomOut";
+            this.btnZoomOut.UseVisualStyleBackColor = true;
+            // 
+            // btnZoomIn
+            // 
+            this.btnZoomIn.Location = new System.Drawing.Point(16, 313);
+            this.btnZoomIn.Name = "btnZoomIn";
+            this.btnZoomIn.Size = new System.Drawing.Size(75, 23);
+            this.btnZoomIn.TabIndex = 19;
+            this.btnZoomIn.Text = "ZoomIn";
+            this.btnZoomIn.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
@@ -199,8 +222,11 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Window;
             this.ClientSize = new System.Drawing.Size(1343, 625);
+            this.Controls.Add(this.btnZoomIn);
+            this.Controls.Add(this.btnZoomOut);
+            this.Controls.Add(this.btnNOK);
+            this.Controls.Add(this.btnOK);
             this.Controls.Add(this.button3);
-            this.Controls.Add(this.button2);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.cmbResolution);
             this.Controls.Add(this.button1);
@@ -210,7 +236,6 @@
             this.Controls.Add(this.cboDevices);
             this.Controls.Add(this.trbBrightness);
             this.Controls.Add(this.btnSettings);
-            this.Controls.Add(this.btnCapture);
             this.Controls.Add(this.BtnStop);
             this.Controls.Add(this.btnStart);
             this.Controls.Add(this.videoPictureBox);
@@ -230,7 +255,6 @@
         private System.Windows.Forms.PictureBox videoPictureBox;
         private System.Windows.Forms.Button btnStart;
         private System.Windows.Forms.Button BtnStop;
-        private System.Windows.Forms.Button btnCapture;
         private System.Windows.Forms.Button btnSettings;
         private System.Windows.Forms.TrackBar trbBrightness;
         private System.Windows.Forms.ComboBox cboDevices;
@@ -240,7 +264,10 @@
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.ComboBox cmbResolution;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Button button2;
         private System.Windows.Forms.Button button3;
+        private System.Windows.Forms.Button btnOK;
+        private System.Windows.Forms.Button btnNOK;
+        private System.Windows.Forms.Button btnZoomOut;
+        private System.Windows.Forms.Button btnZoomIn;
     }
 }
