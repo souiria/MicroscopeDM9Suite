@@ -1,6 +1,4 @@
-﻿
-
-using AForge.Video;
+﻿using AForge.Video;
 using AForge.Video.DirectShow;
 using AForge.Imaging.Filters;
 using System;
@@ -30,6 +28,10 @@ namespace MicroscopeApp
         private int remainingPictures = 0;
         private int totalPicturesRequired = 0;
         private string currentSerialNumber = string.Empty;
+        private float zoomFactor = 0.5f;
+        private const float ZoomStep = 0.2f;
+        private const float MinZoom = 0.4f;
+        private const float MaxZoom = 5.0f;
 
         public Form1()
         {
@@ -40,8 +42,10 @@ namespace MicroscopeApp
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            // Ensure focus starts on the barcode box
             txtcodebare.Select();
+
+            videoPictureBox.MouseWheel += videoPictureBox_MouseWheel;
+            videoPictureBox.Focus();
         }
 
         // =================================================================
@@ -167,18 +171,96 @@ namespace MicroscopeApp
         private void Video_NewFrame(object sender, NewFrameEventArgs eventArgs)
         {
             Bitmap frame = (Bitmap)eventArgs.Frame.Clone();
-            Bitmap resized = new Bitmap(videoPictureBox.Width, videoPictureBox.Height);
-            using (Graphics g = Graphics.FromImage(resized))
+
+            try
             {
-                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                g.DrawImage(frame, new Rectangle(0, 0, resized.Width, resized.Height));
+                Bitmap displayFrame;
+
+                if (zoomFactor > 1.0f)
+                {
+                    int cropWidth = (int)(frame.Width / zoomFactor);
+                    int cropHeight = (int)(frame.Height / zoomFactor);
+
+                    int x = (frame.Width - cropWidth) / 2;
+                    int y = (frame.Height - cropHeight) / 2;
+
+                    Rectangle cropArea = new Rectangle(
+                        x,
+                        y,
+                        cropWidth,
+                        cropHeight);
+
+                    Bitmap croppedFrame = frame.Clone(
+                        cropArea,
+                        frame.PixelFormat);
+
+                    displayFrame = new Bitmap(
+                        videoPictureBox.Width,
+                        videoPictureBox.Height);
+
+                    using (Graphics g = Graphics.FromImage(displayFrame))
+                    {
+                        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                        g.DrawImage(
+                            croppedFrame,
+                            new Rectangle(
+                                0,
+                                0,
+                                displayFrame.Width,
+                                displayFrame.Height));
+                    }
+
+                    croppedFrame.Dispose();
+                }
+                else
+                {
+                    displayFrame = new Bitmap(
+                        videoPictureBox.Width,
+                        videoPictureBox.Height);
+
+                    using (Graphics g = Graphics.FromImage(displayFrame))
+                    {
+                        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                        g.DrawImage(
+                            frame,
+                            new Rectangle(
+                                0,
+                                0,
+                                displayFrame.Width,
+                                displayFrame.Height));
+                    }
+                }
+
+                if (videoPictureBox.InvokeRequired)
+                {
+                    videoPictureBox.BeginInvoke(new Action(() =>
+                    {
+                        if (videoPictureBox.Image != null)
+                        {
+                            videoPictureBox.Image.Dispose();
+                        }
+
+                        videoPictureBox.Image = displayFrame;
+                    }));
+                }
+                else
+                {
+                    if (videoPictureBox.Image != null)
+                    {
+                        videoPictureBox.Image.Dispose();
+                    }
+
+                    videoPictureBox.Image = displayFrame;
+                }
             }
-
-            if (videoPictureBox.Image != null)
-                videoPictureBox.Image.Dispose();
-
-            videoPictureBox.Image = resized;
-            frame.Dispose();
+            catch
+            {
+                // Ignore frame errors
+            }
+            finally
+            {
+                frame.Dispose();
+            }
         }
 
         // =================================================================
@@ -195,7 +277,9 @@ namespace MicroscopeApp
 
         private void ProcessScannedBarcode()
         {
-            string scannedInput = txtcodebare.Text.Trim();
+            // Clean up any trailing newline or whitespace characters from the scanner
+            string scannedInput = txtcodebare.Text.Replace("\r", "").Replace("\n", "").Trim();
+
             if (string.IsNullOrEmpty(scannedInput))
             {
                 statusLabel.ForeColor = Color.Red;
@@ -227,19 +311,21 @@ namespace MicroscopeApp
                 return;
             }
 
-            // Valid scan setup
+            // Explicitly set session variables
             currentSerialNumber = scannedInput;
             remainingPictures = totalPicturesRequired;
 
-            // Lock input box to ensure solid process workflow
+            // Lock input box to make process solid
             txtcodebare.ReadOnly = true;
 
+            // Update status to show countdown is ready
             statusLabel.ForeColor = Color.Blue;
-            statusLabel.Text = $"Ref: {currentMatchedReference} | Remaining Photos: {remainingPictures}/{totalPicturesRequired}";
+            statusLabel.Text = $"Ref: {currentMatchedReference} | Photos Left: {remainingPictures}/{totalPicturesRequired}";
         }
 
+
         // =================================================================
-        // ## 4. Capture Action (OK / NOK handling)
+        // ## 4. Capture Action (OK / NOK handling)    string baseFolder = @"C:\temp";
         // =================================================================
         private void btnOK_Click(object sender, EventArgs e)
         {
@@ -253,10 +339,13 @@ namespace MicroscopeApp
 
         private void SaveCapturedImage(string statusResult)
         {
+            // Safety check if scan wasn't properly locked in
             if (string.IsNullOrEmpty(currentSerialNumber) || remainingPictures <= 0)
             {
-                statusLabel.ForeColor = Color.Red;
-                statusLabel.Text = "Please scan a valid barcode first!";
+                MessageBox.Show("Please scan a valid barcode first and ensure countdown is active.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtcodebare.ReadOnly = false;
+                txtcodebare.Clear();
+                txtcodebare.Select();
                 return;
             }
 
@@ -269,13 +358,25 @@ namespace MicroscopeApp
 
             try
             {
+                // Choose your base folder (Change to network path if needed: @"\\mokeaps001\MEDIA\KenitraQuality")
                 string baseFolder = @"C:\temp";
                 string yearFolder = DateTime.Now.Year.ToString();
                 string monthFolder = DateTime.Now.Month.ToString("D2");
                 string dayFolder = DateTime.Now.Day.ToString("D2");
 
-                // Folder structure: Base\Year\Month\Day\SerialNumber
-                string fullFolder = Path.Combine(baseFolder, yearFolder, monthFolder, dayFolder, currentSerialNumber);
+                // 🛡️ SANITIZE SERIAL NUMBER: Remove/replace illegal Windows folder characters (like /, \, :, etc.)
+                string safeSerialNumber = currentSerialNumber;
+                foreach (char c in Path.GetInvalidFileNameChars())
+                {
+                    safeSerialNumber = safeSerialNumber.Replace(c, '_');
+                }
+                // Also replace path separators just in case
+                safeSerialNumber = safeSerialNumber.Replace('/', '_').Replace('\\', '_');
+
+                // Folder structure: Base\Year\Month\Day\SafeSerialNumber
+                string fullFolder = Path.Combine(baseFolder, yearFolder, monthFolder, dayFolder, safeSerialNumber);
+
+                // Ensure directory exists
                 Directory.CreateDirectory(fullFolder);
 
                 // Filename includes timestamp, sequence index, and OK/NOK status
@@ -283,6 +384,7 @@ namespace MicroscopeApp
                 string fileName = $"{DateTime.Now:HHmmssfff}_{statusResult}_Shot{shotIndex}.jpg";
                 string targetPath = Path.Combine(fullFolder, fileName);
 
+                // Capture current zoomed/displayed frame and save
                 using (Bitmap capturedImage = new Bitmap(videoPictureBox.Image))
                 {
                     // Draw overlay text (Serial + Status + Shot count)
@@ -305,6 +407,7 @@ namespace MicroscopeApp
                     capturedImage.Save(targetPath, ImageFormat.Jpeg);
                 }
 
+                // Decrement countdown tracker
                 remainingPictures--;
 
                 if (remainingPictures > 0)
@@ -314,7 +417,7 @@ namespace MicroscopeApp
                 }
                 else
                 {
-                    // Completed sequence
+                    // Completed full countdown sequence
                     statusLabel.ForeColor = Color.DarkGreen;
                     MessageBox.Show($"All {totalPicturesRequired} pictures captured successfully for serial: {currentSerialNumber}", "Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
@@ -323,11 +426,12 @@ namespace MicroscopeApp
             }
             catch (Exception ex)
             {
+                // Detailed error display to help diagnose any remaining path/permission issues
                 statusLabel.ForeColor = Color.Red;
-                statusLabel.Text = $"Error saving image: {ex.Message}";
+                statusLabel.Text = $"Save Error: {ex.Message}";
+                MessageBox.Show($"Detailed Save Error:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
         // --- Reset Session ---
         private void button3_Click(object sender, EventArgs e)
         {
@@ -386,6 +490,50 @@ namespace MicroscopeApp
         private void txtcodebare_TextChanged(object sender, EventArgs e)
         {
 
+        }
+        private void btnZoomIn_Click(object sender, EventArgs e)
+        {
+            if (zoomFactor < MaxZoom)
+            {
+                zoomFactor += ZoomStep;
+            }
+
+            statusLabel.ForeColor = Color.Blue;
+            statusLabel.Text = $"Zoom: {zoomFactor:0.0}x";
+        }
+
+        private void btnZoomOut_Click(object sender, EventArgs e)
+        {
+            zoomFactor -= ZoomStep;
+            zoomFactor -= ZoomStep;
+
+            if (zoomFactor < MinZoom)
+            {
+                zoomFactor = MinZoom;
+            }
+
+            statusLabel.Text = $"Zoom: {zoomFactor:0.0}x";
+        }
+        private void videoPictureBox_MouseWheel(object sender, MouseEventArgs e)
+        {
+            if (e.Delta > 0)
+            {
+                if (zoomFactor < MaxZoom)
+                {
+                    zoomFactor += ZoomStep;
+                }
+            }
+            else
+            {
+                zoomFactor -= ZoomStep;
+
+                if (zoomFactor < 1.0f)
+                {
+                    zoomFactor = 1.0f;
+                }
+            }
+
+            statusLabel.Text = $"Zoom: {zoomFactor:0.0}x";
         }
     }
 }
